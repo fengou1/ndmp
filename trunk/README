@@ -1,0 +1,177 @@
+
+1. INTRODUCTION
+
+
+The Network Data Management Protocol (NDMP) is an open protocol for enterprise-wide
+network based backup. The NDMP architecture allows network attached storage vendors
+to ship NDMP compliant file servers which can be used by any NDMP-compliant backup
+administration application. This same architecture is also used for network-attached
+backup devices, such as tape drives and tape libraries.
+
+The purpose of this protocol is to allow a network backup application to control
+the backup and retrieval of an NDMP compliant server without installing third party 
+software on the server. The control and data transfer components of the backup and
+recovery are separated. The separation allows complete interoperability at a network
+level. The file system vendors need only be concerned with maintaining compatibility
+with one, well-defined protocol. The backup vendors can place their primary focus on
+the sophisticated central backup administration software. Refer to http://www.ndmp.org/
+for more information about the NDMP protocol.
+
+
+The source code here provides the following:
+
+- An ndmpd(1) daemon which provides NDMP data and control service for local
+  and remote NDMP supporting third party clients. These client applications
+  which are embedded in backup solutions can manage and monitor the backup
+  and restore of data on Solaris.
+
+- An ndmpadm(1M) utility to permit the administrator to change and tune the
+  properties associated with the service, such as version of protocol being
+  used. It also can acquire information about the current backup from the
+  running daemon and present it to the user.
+
+- An ndmpstat(1M) utility that displays a report of backup statistics per
+  given intervals. The statistics contains the number of worker threads involved,
+  the number of IO operations for tape and disk per second and the aggregate 
+  throughput of backup or restore.
+
+- A set of system service SMF properties that save the values of NDMP 
+  service parameters. These parameters can be changed independently by
+  svccfg(1M) to affect the behavior of current running process.
+
+
+These binaries and scripts are delivered by the following two packages:
+	- SUNWndmpr
+	- SUNWndmpu
+
+
+Refer to section 3 to see how to build these packages
+
+
+2. SOURCE TREE
+
+
+The current source tree consists of two main components:
+
+	- Daemon and other binaries		usr/src/cmd	usr/src/lib
+	- Packages build environment		usr/src/pkgdefs
+
+
+Below is a brief explanation of the source tree:
+
+usr/env.sh			script to build the environment
+
+usr/src/lib/libndmp		libndmp library (all other binaries are dependent on libndmp)
+
+usr/src/cmd/ndmpd		NDMP daemon
+
+usr/src/cmd/ndmpadm		ndmpadm tools
+
+usr/src/cmd/ndmpstat		ndmpstat tools
+
+usr/src/pkgdefs/SUNWndmpu	SUNWndmpu user package definition
+
+usr/src/pkgdefs/SUNWndmpr	SUNWndmpr root package definition
+
+
+3. HOW TO BUILD
+
+In order to build the packages this order has to be followed due to the dependencies
+of the modules:
+
+libndmp -> ndmpstat (optional) 
+	-> ndmpadm
+	-> ndmpd
+		-> SUNWndmpr
+		-> SUNWndmpu
+
+Before making the builds the environment should properly be set up. To set up the
+environment and create the build directories the following shell script should be
+run first:
+
+./env.sh <MACH> <PATH>
+
+where MACH is any of sparc, i386, amd64 and PATH is the full path to where the
+source is located.
+
+There are some sources and makefiles needed fro OpenSolaris.com website. Use
+mercurial (hg) to pull the files and combine them with the current source. To
+do so, make sure you have hg installed then run this script:
+
+# ./pull.sh
+
+
+Then build the libndmp:
+
+# cd usr/src/lib/libndmp
+# make
+# make install
+# make install_h
+
+###################################################################
+Note: In case make install fails with this error:
+install: cp <module> /proto/<directory> failed
+*** Error code 2
+
+The reason is that the master makefile brought over from opensolaris
+website has set the ROOT to a different location. To fix this, edit
+Makefile.master file and comment out the line that sets the ROOT
+variable.
+
+# vi usr/src/Makefile.master
+...
+#
+# Makefile.master, global definitions for system source
+#
+#ROOT=           /proto		<-- Comment this out
+...
+
+###################################################################
+
+ 
+To make ndmpstat tools:
+
+# cd usr/src/cmd/ndmpstat
+# make
+# make install
+
+
+To make ndmpadm tools:
+
+# cd usr/src/cmd/ndmpadm
+# make
+# make install
+
+
+To make ndmpd daemon:
+
+# cd usr/src/cmd/ndmpd
+# make
+# make install
+
+
+To make the packages first we need to make the packaging
+scripts by:
+
+# cd usr/src/pkgdefs
+# make awk_pkginfo
+
+
+To make SUNWndmpu package:
+
+# cd usr/src/pkgdefs/SUNWndmpu
+# make all
+
+
+To make SUNWndmpr package:
+
+# cd usr/src/pkgdefs/SUNWndmpr
+# make all
+
+After these steps the final packages will be created under packages/i386/nightly/
+
+
+4. HOW TO USE
+
+To properly use the service please refer to the man pages under usr/src/cmd/man
+

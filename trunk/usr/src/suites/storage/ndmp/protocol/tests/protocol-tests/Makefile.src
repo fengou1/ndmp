@@ -1,0 +1,162 @@
+#
+# Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
+# Use is subject to license terms.
+#
+
+#
+# BSD 3 Clause License
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#       - Redistributions of source code must retain the above copyright
+#         notice, this list of conditions and the following disclaimer.
+#
+#       - Redistributions in binary form must reproduce the above copyright
+#         notice, this list of conditions and the following disclaimer in
+#         the documentation and/or other materials provided with the
+#         distribution.
+#
+#       - Neither the name of Sun Microsystems, Inc. nor the
+#         names of its contributors may be used to endorse or promote products
+#         derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SUN MICROSYSTEMS, INC. "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL SUN MICROSYSTEMS, INC. BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+#
+# ident	"@(#)Makefile.src	1.2	09/02/11 SMI"
+#
+
+include $(TET_SUITE_ROOT)/ndmp/protocol/Targetdirs
+
+.KEEP_STATE:
+
+ARCH    :sh     = uname -p
+ISA64_i386      = amd64
+ISA64_sparc     = sparcv9
+ISA64           = $(ISA64_$(ARCH))
+
+BIN_DIR			  = ../../bin
+
+SAMPLE_SRC                = ../../src
+
+SAMPLE_LIB                = ../../lib
+
+SAMPLE_INC                = ../../include
+
+OBJDIR			  = obj_dir
+OBJDIR64		  = obj_dir/$(ISA64)
+
+COMMON_TESTLIB            = -lCommonTest
+COMMON_THR_TESTLIB	  = -lCommonTest_thr
+COMMON_SHLIB_TESTLIB      = -lCommonTest_s
+COMMON_SCRIPT_TESTLIB     = -lCommonTest_script
+                          
+SAMPLE_TESTLIB            = -lsampletest
+SAMPLE_THR_TESTLIB	  = -lsampletest_thr
+                          
+TSET_SAMPLE_TESTLIB       = -ltset_sampletest
+TSET_SAMPLE_THR_TESTLIB	  = -ltset_sampletest_thr
+
+DISTLIBS		  = -lsocket -lnsl
+SRCS        = $(TESTFILES:%=%.c)
+OBJS        = $(TESTFILES:%=$(OBJDIR)/%.o) 
+TC_KMOD64_SH= [ x${TC_KMOD} != x ] && echo ${ISA64}/${TC_KMOD}; :
+TC_KMOD64   = ${TC_KMOD64_SH:sh}
+SRCS_KMOD   = $(TESTFILES_KMOD:%=%.c)
+SRCS_KMOD64 = $(TESTFILES_KMOD:%=%.c)
+OBJS_KMOD   = $(TESTFILES_KMOD:%=$(OBJDIR)/%.o)
+OBJS_KMOD64 = $(TESTFILES_KMOD:%=$(OBJDIR64)/%.o)
+SRCS_KSH    = $(TARGET_KSH:%=%.ksh)
+SRCS_PERL   = $(TARGET_PERL:%=%.pl)
+FILES_KSH   = $(TARGET_KSH)
+FILES_PERL  = $(TARGET_PERL)
+
+_LIBS_     =  -L$(COMMON_LIB) -L$(SAMPLE_LIB) -L$(CTI_LIB) $(DISTLIBS)\
+	            $(COMMON_TESTLIB) $(SAMPLE_TESTLIB) \
+			$(COMMON_SCRIPT_TESTLIB) $(TSET_SAMPLE_TESTLIB)
+
+_LIBS_TRUE = -L$(COMMON_LIB) -L$(SAMPLE_LIB) -L$(TSET_SAMPLE_LIB)  \
+	           $(COMMON_THR_TESTLIB) $(SAMPLE_THR_TESTLIB) \
+			$(COMMON_SCRIPT_TESTLIB) $(TSET_SAMPLE_THR_TESTLIB)
+
+LIBS = $(_LIBS_)
+
+_SYSLIBS_           = -lsocket -lnsl
+
+CFLAGS_KMOD          += -D_KERNEL -DDEBUG -I$(TET_INC) -I$(COMMON_INC) \
+			-I$(CTI_INC)
+CFLAGS64_i386	= $(CFLAGS_KMOD) -xarch=amd64 -xmodel=kernel
+CFLAGS64_sparc  = $(CFLAGS_KMOD) -xarch=v9
+$(TC_KMOD)	:= LDFLAGS = -L$(CTI_LIB)
+$(TC_KMOD64)	:= LDFLAGS64 = -L$(CTI_LIB)/$(ISA64)
+$(TC_KMOD) $(TC_KMOD64) := LDLIBS = -lkmodapi
+
+CFLAGS          = -I$(TET_INC) -I$(COMMON_INC) -I$(SAMPLE_INC) -I$(CTI_INC)
+LINTFLAGS       = -I$(TET_INC) -I$(COMMON_INC) -I$(SAMPLE_INC)
+
+TARGET_DEPENDENCIES = $(TET_SUITE_ROOT)/ndmp/src
+
+include $(CTI_ROOT)/Makefiles/Makefile.tests
+
+all : $(SRC) $(TC_KMOD) $(TC_KMOD64) $(FILES_KSH) $(FILES_PERL)
+
+$(SRC) : $(TARGET_DEPENDENCIES) $(PLAT_DIR) $(OBJS) 
+	@$(RM) $@
+	$(CC) $(TET_OBJS) $(OBJS) -o $@ $(LIBS) $(TET_API_LIB) $(SYSLIBS) \
+	    $(SYSLIBS_ADD)
+
+$(OBJS) : $(OBJDIR) $(SRCS) 
+	@$(RM) $@
+	$(CC) $(CFLAGS) $(CFLAGS_ADD) $(@:$(OBJDIR)/%.o=%.c) -o $@ -c
+
+$(TC_KMOD): $(TARGET_DEPENDENCIES) $(PLAT_DIR) $(OBJS_KMOD)
+	$(LD) -r $(LDFLAGS) -o $@ $(OBJS_KMOD) $(LDLIBS)
+
+$(TC_KMOD64): $(TARGET_DEPENDENCIES) $(PLAT_DIR) $(OBJS_KMOD64)
+	mkdir -p $(@D)
+	$(LD) -r $(LDFLAGS64) -o $@ $(OBJS_KMOD64) $(LDLIBS)
+	
+$(OBJS_KMOD) : $(OBJDIR) $(SRCS_KMOD) 
+	@$(RM) $@
+	$(CC) $(CFLAGS_KMOD) $(@F:.o=.c) -o $@ -c
+
+$(OBJS_KMOD64): $(OBJDIR64) $(SRCS_KMOD64)
+	mkdir -p $(@D)
+	$(CC) $(CFLAGS64_$(ARCH)) $(@F:.o=.c) -o $@ -c 
+
+$(TARGET_DEPENDENCIES) : FRC
+	@cd $(TARGET_DEPENDENCIES); $(MAKE) all
+
+clean :
+	@$(RM) -r $(SRC) $(TARGET) $(TARGET_SCRIPT) $(TARGET_KSH) \
+	    $(FILES_KSH) $(TARGET_PERL) $(FILES_PERL) $(TC_KMOD) *.o
+	@$(RM) -r $(OBJDIR)
+	@$(RM) -r $(OBJDIR64)
+	@$(RM) -r $(ISA64)
+	@$(RM) -r .make.state
+
+clobber : clean
+	@$(RM) core *% tet_captured
+
+lint :
+	@$(LINT.c) -errfmt=simple -errhdr=%user -ux $(LINTFLAGS) \
+	    $(CFLAGS_ADD) $(SRCS)
+
+$(OBJDIR) : 
+	@mkdir -p -m 0777 $(OBJDIR)
+
+$(OBJDIR64) : 
+	@mkdir -p -m 0777 $(OBJDIR64)
+
+FRC :

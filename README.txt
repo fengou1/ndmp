@@ -1,0 +1,1 @@
+This software and associated documentation has been released and approved by the SNIA. The SNIA believes that the ideas, methodologies and technologies described in this material accurately represent the SNIA goals and are appropriate for widespread distribution. Suggestions for revision should be directed to SNIA Feedback portal at http://www.snia.org/feedback/.

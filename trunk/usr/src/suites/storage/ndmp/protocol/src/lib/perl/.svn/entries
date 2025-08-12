@@ -1,0 +1,52 @@
+8
+
+dir
+14
+https://63.247.204.50/repos/ndmp/trunk/usr/src/suites/storage/ndmp/protocol/src/lib/perl
+https://63.247.204.50/repos/ndmp
+
+
+
+2009-04-01T19:33:36.229736Z
+13
+mac
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+a9876945-a23c-4f83-84f9-9bf9953b1cad
+
+ndmp_execute.pl
+file
+
+
+
+
+2009-04-01T19:35:06.000000Z
+8e00182fcaa82c9d3addf476d47f057b
+2009-04-01T19:33:36.229736Z
+13
+mac
+
+Makefile
+file
+
+
+
+
+2009-04-01T19:35:06.000000Z
+790770c0ec849259600fef62f71a72bc
+2009-04-01T19:33:36.229736Z
+13
+mac
+
