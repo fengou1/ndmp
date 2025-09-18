@@ -1,68 +1,70 @@
+# SPDX-License-Identifier: BSD-3-Clause
 #
-# Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
-# Use is subject to license terms.
-#
+# Simplified Linux-friendly build for libndmp.
 
-#
-# BSD 3 Clause License
-#
-# Copyright (c) 2007, The Storage Networking Industry Association.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-# 	- Redistributions of source code must retain the above copyright
-#	  notice, this list of conditions and the following disclaimer.
-#
-# 	- Redistributions in binary form must reproduce the above copyright
-#	  notice, this list of conditions and the following disclaimer in
-#	  the documentation and/or other materials provided with the
-#	  distribution.
-#
-#	- Neither the name of The Storage Networking Industry Association (SNIA)
-#	  nor the names of its contributors may be used to endorse or promote
-#	  products derived from this software without specific prior written
-#	  permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
+CC ?= cc
+AR ?= ar
+RANLIB ?= ranlib
+INSTALL ?= install
+PREFIX ?= /usr/local
+DESTDIR ?=
+LIBDIR ?= $(PREFIX)/lib
+INCLUDEDIR ?= $(PREFIX)/include
+OBJDIR ?= build
 
-include		../Makefile.lib
+OPENZFS_PREFIX ?= /usr
+OPENZFS_INCLUDEDIR ?= $(OPENZFS_PREFIX)/include
+OPENZFS_LIBDIR ?= $(OPENZFS_PREFIX)/lib
+OPENZFS_CPPFLAGS ?= -I$(OPENZFS_INCLUDEDIR) \
+-I$(OPENZFS_INCLUDEDIR)/libdoor \
+-I$(OPENZFS_INCLUDEDIR)/libnvpair \
+-I$(OPENZFS_INCLUDEDIR)/libscf \
+-I$(OPENZFS_INCLUDEDIR)/libspl
+OPENZFS_LDFLAGS ?= -L$(OPENZFS_LIBDIR)
 
-HDRS=		libndmp.h
+SRCDIR := common
+SOURCES := $(SRCDIR)/libndmp.c \
+$(SRCDIR)/libndmp_base64.c \
+$(SRCDIR)/libndmp_door_data.c \
+$(SRCDIR)/libndmp_error.c \
+$(SRCDIR)/libndmp_prop.c
+OBJECTS := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SOURCES))
+DEPS := $(OBJECTS:.o=.d)
 
-HDRDIR=		common
+STATIC_LIB := libndmp.a
+SHARED_LIB := libndmp.so
 
-SUBDIRS=	$(MACH)
-$(BUILD64)SUBDIRS += $(MACH64)
+CPPFLAGS += -I$(SRCDIR) -I../cmd/ndmpd/include $(OPENZFS_CPPFLAGS)
+CFLAGS ?= -O2
+CFLAGS += -fPIC
+LDFLAGS += $(OPENZFS_LDFLAGS)
+LDLIBS += -ldoor -lnvpair -lpthread -lintl -lscf
 
-all :=		TARGET= all
-clean :=	TARGET= clean
-clobber :=	TARGET= clobber
-install :=	TARGET= install
-lint :=		TARGET= lint
+.PHONY: all clean install
 
-.KEEP_STATE:
+all: $(STATIC_LIB) $(SHARED_LIB)
 
-all clean clobber install lint: $(SUBDIRS)
+$(OBJDIR):
+	mkdir -p $@
 
-install_h: $(ROOTHDRS)
-check: $(CHECKHDRS)
-$(SUBDIRS): FRC
-	@cd $@; pwd; $(MAKE) $(TARGET)
+$(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -c $< -o $@
 
-FRC:
+$(STATIC_LIB): $(OBJECTS)
+	$(AR) rcs $@ $^
+	$(RANLIB) $@
 
-include ../Makefile.targ
-include ../../Makefile.msg.targ
+$(SHARED_LIB): $(OBJECTS)
+	$(CC) -shared $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+install: all
+	$(INSTALL) -d $(DESTDIR)$(LIBDIR)
+	$(INSTALL) -m 0755 $(SHARED_LIB) $(DESTDIR)$(LIBDIR)/$(SHARED_LIB)
+	$(INSTALL) -m 0644 $(STATIC_LIB) $(DESTDIR)$(LIBDIR)/$(STATIC_LIB)
+	$(INSTALL) -d $(DESTDIR)$(INCLUDEDIR)
+	$(INSTALL) -m 0644 $(SRCDIR)/libndmp.h $(DESTDIR)$(INCLUDEDIR)/libndmp.h
+
+clean:
+	rm -rf $(OBJDIR) $(STATIC_LIB) $(SHARED_LIB)
+
+-include $(DEPS)
