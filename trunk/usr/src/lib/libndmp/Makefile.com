@@ -38,26 +38,36 @@
 #
 LIBRARY= libndmp.a
 VERS= .1
-OBJECTS= libndmp.o libndmp_error.o libndmp_door_data.o libndmp_prop.o libndmp_base64.o
+COMMON_OBJECTS= libndmp.o libndmp_error.o libndmp_door_data.o libndmp_prop.o \
+    libndmp_base64.o
+COMPAT_OBJECTS= door_compat.o libscf_compat.o
+OBJECTS= $(COMMON_OBJECTS) $(COMPAT_OBJECTS)
 
 include ../../Makefile.lib
 
 SRCDIR =	../common
+COMPATDIR =	../compat
+INCS += -I$(COMPATDIR)
 INCS += -I$(SRCDIR)
 INCS += -I$(SRC)/cmd/ndmpd/include
 
 C99MODE=	-xc99=%all
 C99LMODE=	-Xc99=%all
 LIBS=	$(DYNLIB) $(LINTLIB)
-LDLIBS +=	-lc -lscf
+LDLIBS +=	-lc
 CPPFLAGS +=	$(INCS) -D_REENTRANT
 
-SRCS=	$(OBJECTS:%.o=$(SRCDIR)/%.c)
+SRCS=	$(COMMON_OBJECTS:%.o=$(SRCDIR)/%.c) \
+	$(COMPAT_OBJECTS:%.o=$(COMPATDIR)/%.c)
 $(LINTLIB) := SRCS=	$(SRCDIR)/$(LINTSRC)
 
 .KEEP_STATE:
 
 all: $(LIBS)
+
+$(COMPAT_OBJECTS): %.o: $(COMPATDIR)/%.c
+	$(COMPILE.c) -o $@ $<
+	$(POST_PROCESS_O)
 
 lint: lintcheck
 
