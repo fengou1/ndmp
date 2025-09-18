@@ -23,18 +23,21 @@ OPENZFS_CPPFLAGS ?= -I$(OPENZFS_INCLUDEDIR) \
 OPENZFS_LDFLAGS ?= -L$(OPENZFS_LIBDIR)
 
 SRCDIR := common
+COMPATDIR := compat
 SOURCES := $(SRCDIR)/libndmp.c \
-$(SRCDIR)/libndmp_base64.c \
-$(SRCDIR)/libndmp_door_data.c \
-$(SRCDIR)/libndmp_error.c \
-$(SRCDIR)/libndmp_prop.c
-OBJECTS := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SOURCES))
+    $(SRCDIR)/libndmp_base64.c \
+    $(SRCDIR)/libndmp_door_data.c \
+    $(SRCDIR)/libndmp_error.c \
+    $(SRCDIR)/libndmp_prop.c \
+    $(COMPATDIR)/door_compat.c \
+    $(COMPATDIR)/libscf_compat.c
+OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(SOURCES))
 DEPS := $(OBJECTS:.o=.d)
 
 STATIC_LIB := libndmp.a
 SHARED_LIB := libndmp.so
 
-CPPFLAGS += -I$(SRCDIR) -I../cmd/ndmpd/include $(OPENZFS_CPPFLAGS)
+CPPFLAGS += -I$(SRCDIR) -I$(COMPATDIR) -I../cmd/ndmpd/include -I../../cmd/ndmpd/include $(OPENZFS_CPPFLAGS)
 CFLAGS ?= -O2
 CFLAGS += -fPIC
 LDFLAGS += $(OPENZFS_LDFLAGS)
@@ -47,7 +50,8 @@ all: $(STATIC_LIB) $(SHARED_LIB)
 $(OBJDIR):
 	mkdir -p $@
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
+$(OBJDIR)/%.o: %.c | $(OBJDIR)
+	mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -c $< -o $@
 
 $(STATIC_LIB): $(OBJECTS)
