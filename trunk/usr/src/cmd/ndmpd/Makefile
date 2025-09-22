@@ -52,6 +52,13 @@ CPPFLAGS += $(LFLAGS64)
 CPPFLAGS += -D_FILE_OFFSET_BITS=64 -DDEBUG
 CPPFLAGS += -I. -Iinclude
 
+PRIV_H_PRESENT := $(shell echo '#include <priv.h>' | \
+    $(CC) $(CPPFLAGS) -E - 2>/dev/null >/dev/null && echo yes)
+
+ifeq ($(PRIV_H_PRESENT),yes)
+CPPFLAGS += -DHAVE_PRIV_H
+endif
+
 C99MODE = $(C99_ENABLE)
 
 # lint does not like unused _umem_*_init
@@ -101,7 +108,8 @@ TLM_OBJ = \
 	tlm_info.o \
 	tlm_init.o \
 	tlm_lib.o \
-	tlm_restore_writer.o \
+        tlm_priv_compat.o \
+        tlm_restore_writer.o \
 	tlm_traverse.o \
 	tlm_util.o \
 	tlm_hardlink.o

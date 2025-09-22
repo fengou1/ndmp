@@ -48,13 +48,16 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <archives.h>
+#ifdef HAVE_PRIV_H
 #include <priv.h>
+#endif
 #include <tlm.h>
 #include <libzfs.h>
 #include <pwd.h>
 #include <grp.h>
 #include <ndmpd_prop.h>
 #include "tlm_proto.h"
+#include "tlm_priv_compat.h"
 
 
 #define	PM_EXACT_OR_CHILD(m)	((m) == PM_EXACT || (m) == PM_CHILD)
@@ -1897,57 +1900,59 @@ load_acl_info(int lib,
 	return (file_size - nread);
 }
 
-static int
+#ifdef HAVE_PRIV_H
+int
 ndmp_set_eprivs_least(void)
 {
-	priv_set_t *priv_set;
+        priv_set_t *priv_set;
 
-	if ((priv_set = priv_allocset()) == NULL) {
-		NDMP_LOG(LOG_ERR, "Out of memory.");
-		return (-1);
-	}
-	priv_emptyset(priv_set);
-	(void) priv_addset(priv_set, "basic");
-	(void) priv_addset(priv_set, "proc_audit");
-	(void) priv_addset(priv_set, "proc_setid");
-	(void) priv_addset(priv_set, "proc_owner");
-	(void) priv_addset(priv_set, "file_chown");
-	(void) priv_addset(priv_set, "file_chown_self");
-	(void) priv_addset(priv_set, "file_dac_read");
-	(void) priv_addset(priv_set, "file_dac_search");
-	(void) priv_addset(priv_set, "file_dac_write");
-	(void) priv_addset(priv_set, "file_owner");
-	(void) priv_addset(priv_set, "file_setid");
-	(void) priv_addset(priv_set, "sys_linkdir");
-	(void) priv_addset(priv_set, "sys_devices");
-	(void) priv_addset(priv_set, "sys_mount");
-	(void) priv_addset(priv_set, "sys_config");
+        if ((priv_set = priv_allocset()) == NULL) {
+                NDMP_LOG(LOG_ERR, "Out of memory.");
+                return (-1);
+        }
+        priv_emptyset(priv_set);
+        (void) priv_addset(priv_set, "basic");
+        (void) priv_addset(priv_set, "proc_audit");
+        (void) priv_addset(priv_set, "proc_setid");
+        (void) priv_addset(priv_set, "proc_owner");
+        (void) priv_addset(priv_set, "file_chown");
+        (void) priv_addset(priv_set, "file_chown_self");
+        (void) priv_addset(priv_set, "file_dac_read");
+        (void) priv_addset(priv_set, "file_dac_search");
+        (void) priv_addset(priv_set, "file_dac_write");
+        (void) priv_addset(priv_set, "file_owner");
+        (void) priv_addset(priv_set, "file_setid");
+        (void) priv_addset(priv_set, "sys_linkdir");
+        (void) priv_addset(priv_set, "sys_devices");
+        (void) priv_addset(priv_set, "sys_mount");
+        (void) priv_addset(priv_set, "sys_config");
 
-	if (setppriv(PRIV_SET, PRIV_EFFECTIVE, priv_set) == -1) {
-		NDMP_LOG(LOG_ERR, "Additional privileges required.");
-		priv_freeset(priv_set);
-		return (-1);
-	}
-	priv_freeset(priv_set);
-	return (0);
+        if (setppriv(PRIV_SET, PRIV_EFFECTIVE, priv_set) == -1) {
+                NDMP_LOG(LOG_ERR, "Additional privileges required.");
+                priv_freeset(priv_set);
+                return (-1);
+        }
+        priv_freeset(priv_set);
+        return (0);
 }
 
-static int
+int
 ndmp_set_eprivs_all(void)
 {
-	priv_set_t *priv_set;
+        priv_set_t *priv_set;
 
-	if ((priv_set = priv_str_to_set("all", ",", NULL)) == NULL) {
-		NDMP_LOG(LOG_ERR, "Could not set privileges to 'all'.");
-		return (-1);
-	}
-	if (setppriv(PRIV_SET, PRIV_EFFECTIVE, priv_set) != 0) {
-		NDMP_LOG(LOG_ERR, "Additional privileges required.");
-		return (-1);
-	}
-	priv_freeset(priv_set);
-	return (0);
+        if ((priv_set = priv_str_to_set("all", ",", NULL)) == NULL) {
+                NDMP_LOG(LOG_ERR, "Could not set privileges to 'all'.");
+                return (-1);
+        }
+        if (setppriv(PRIV_SET, PRIV_EFFECTIVE, priv_set) != 0) {
+                NDMP_LOG(LOG_ERR, "Additional privileges required.");
+                return (-1);
+        }
+        priv_freeset(priv_set);
+        return (0);
 }
+#endif /* HAVE_PRIV_H */
 
 /*
  * Set the standard attributes of the file
