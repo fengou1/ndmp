@@ -6,7 +6,7 @@
 
 ```mermaid
 classDiagram
-    class NdmpConnection {
+    class ndmpConnection {
         +int conn_sock
         +XDR conn_xdrs
         +ulong_t conn_my_sequence
@@ -19,7 +19,7 @@ classDiagram
         +adt_session_data_t* conn_ah
     }
 
-    class NdmpMsgHandler {
+    class ndmpMsgHandler {
         +ndmp_msg_handler_func_t* mh_func
         +bool_t(*mh_xdr_request)(XDR*, ...)
         +int mh_sizeof_request
@@ -27,12 +27,12 @@ classDiagram
         +int mh_sizeof_reply
     }
 
-    class NdmpHandler {
+    class ndmpHandler {
         +int hd_cnt
         +hd_messages[INT_MAXCMD]
     }
 
-    class NdmpdSessionScsiDesc {
+    class ndmpdSessionScsiDesc {
         +int sd_is_open
         +int sd_devid
         +boolean_t sd_valid_target_set
@@ -41,7 +41,7 @@ classDiagram
         +char sd_adapter_name[SCSI_MAX_NAME]
     }
 
-    class NdmpdSessionTapeDesc {
+    class ndmpdSessionTapeDesc {
         +int td_fd
         +ulong_t td_record_count
         +ndmp_tape_open_mode td_mode
@@ -51,7 +51,7 @@ classDiagram
         +char td_adapter_name[SCSI_MAX_NAME]
     }
 
-    class NdmpdSessionMoverDesc {
+    class ndmpdSessionMoverDesc {
         +ndmp_mover_state md_state
         +ndmp_mover_mode md_mode
         +ndmp_mover_pause_reason md_pause_reason
@@ -72,14 +72,14 @@ classDiagram
         +char* md_buf
     }
 
-    class NdmpdSessionDataModule {
+    class ndmpdSessionDataModule {
         +void* dm_module_cookie
         +module_start_func_t* dm_start_func
         +module_abort_func_t* dm_abort_func
         +ndmpd_module_stats dm_stats
     }
 
-    class NdmpdSessionDataDesc {
+    class ndmpdSessionDataDesc {
         +ndmp_data_operation dd_operation
         +boolean_t dd_abort
         +boolean_t dd_io_ready
@@ -104,7 +104,7 @@ classDiagram
         +ndmp_addr_v4 dd_data_addr_v4
     }
 
-    class NdmpdSessionFileHistory {
+    class ndmpdSessionFileHistory {
         +ndmp_fh_unix_path* fh_path_entries
         +ndmp_fh_unix_dir* fh_dir_entries
         +ndmp_fh_unix_node* fh_node_entries
@@ -117,7 +117,7 @@ classDiagram
         +ulong_t fh_dir_name_buf_index
     }
 
-    class NdmpdSessionFileHistoryV3 {
+    class ndmpdSessionFileHistoryV3 {
         +ndmp_file_v3* fh_files
         +ndmp_dir_v3* fh_dirs
         +ndmp_node_v3* fh_nodes
@@ -134,7 +134,7 @@ classDiagram
         +ulong_t fh_dir_name_buf_index
     }
 
-    class NdmpdFileHandler {
+    class ndmpdFileHandler {
         +int fh_fd
         +ulong_t fh_mode
         +ulong_t fh_class
@@ -143,7 +143,7 @@ classDiagram
         +ndmpd_file_handler* fh_next
     }
 
-    class NdmpdModuleParams {
+    class ndmpdModuleParams {
         +void* mp_daemon_cookie
         +void** mp_module_cookie
         +ushort_t mp_protocol_version
@@ -168,7 +168,7 @@ classDiagram
         +ndmpd_log_func_v3_t* mp_log_func_v3
     }
 
-    class NdmpLbrParams {
+    class ndmpLbrParams {
         +NdmpdSession* nlp_session
         +int nlp_flags
         +ndmp_backup_params_t bk_params
@@ -184,7 +184,7 @@ classDiagram
         +u_longlong_t nlp_bytes_total
     }
 
-    class NdmpdSession {
+    class ndmpdSession {
         +ndmp_connection_t* ns_connection
         +boolean_t ns_eof
         +ushort_t ns_protocol_version
@@ -203,22 +203,22 @@ classDiagram
         +hardlink_q* hardlink_q
     }
 
-    NdmpdSession --> NdmpConnection : owns
-    NdmpdSession --> NdmpdSessionScsiDesc : embeds
-    NdmpdSession --> NdmpdSessionTapeDesc : embeds
-    NdmpdSession --> NdmpdSessionMoverDesc : embeds
-    NdmpdSession --> NdmpdSessionDataDesc : embeds
-    NdmpdSession --> NdmpdSessionFileHistory : embeds
-    NdmpdSession --> NdmpdSessionFileHistoryV3 : embeds
-    NdmpdSession --> NdmpdFileHandler : tracks
-    NdmpdSession --> NdmpLbrParams : references
-    NdmpLbrParams --> NdmpdSession : back-pointer
-    NdmpLbrParams --> NdmpdModuleParams : configures
-    NdmpdSessionDataDesc --> NdmpdSessionDataModule : composes
-    NdmpdSessionDataModule --> NdmpdModuleParams : uses stats
-    NdmpdSessionDataDesc --> NdmpdSessionMoverDesc : coordinates
-    NdmpHandler --> NdmpMsgHandler : aggregates
-    NdmpConnection --> NdmpHandler : uses dispatch table
+    ndmpdSession --> ndmpConnection : owns
+    ndmpdSession --> ndmpdSessionScsiDesc : embeds
+    ndmpdSession --> ndmpdSessionTapeDesc : embeds
+    ndmpdSession --> ndmpdSessionMoverDesc : embeds
+    ndmpdSession --> ndmpdSessionDataDesc : embeds
+    ndmpdSession --> ndmpdSessionFileHistory : embeds
+    ndmpdSession --> ndmpdSessionFileHistoryV3 : embeds
+    ndmpdSession --> ndmpdFileHandler : tracks
+    ndmpdSession --> ndmpLbrParams : references
+    ndmpLbrParams --> ndmpdSession : back-pointer
+    ndmpLbrParams --> ndmpdModuleParams : configures
+    ndmpdSessionDataDesc --> ndmpdSessionDataModule : composes
+    ndmpdSessionDataModule --> ndmpdModuleParams : uses stats
+    ndmpdSessionDataDesc --> ndmpdSessionMoverDesc : coordinates
+    ndmpHandler --> ndmpMsgHandler : aggregates
+    ndmpConnection --> ndmpHandler : uses dispatch table
 ```
 
 上述类图归纳了 `ndmpd` 控制面使用的关键结构体与嵌套关系。
@@ -227,37 +227,37 @@ classDiagram
 
 ```mermaid
 graph TD
-    NdmpdMain[ndmpd_main.c]
-    NdmpdDoor[ndmpd_door.c]
-    NdmpdProp[ndmpd_prop.c]
-    NdmpdComm[ndmpd_comm.c]
-    NdmpdHandler[ndmpd_handler.c]
-    NdmpdConfig[ndmpd_config.c]
-    NdmpdScsi[ndmpd_scsi.c]
-    NdmpdTape[ndmpd_tape.c]
-    NdmpdData[ndmpd_data.c]
-    NdmpdMover[ndmpd_mover.c]
-    NdmpdUtil[ndmpd_util.c]
-    TlmLib[tlm_init.c / tlm_proto.h]
+    ndmpdMain[ndmpd_main.c]
+    ndmpdDoor[ndmpd_door.c]
+    ndmpdProp[ndmpd_prop.c]
+    ndmpdComm[ndmpd_comm.c]
+    ndmpdHandler[ndmpd_handler.c]
+    ndmpdConfig[ndmpd_config.c]
+    ndmpdScsi[ndmpd_scsi.c]
+    ndmpdTape[ndmpd_tape.c]
+    ndmpdData[ndmpd_data.c]
+    ndmpdMover[ndmpd_mover.c]
+    ndmpdUtil[ndmpd_util.c]
+    tlmLib[tlm_init.c / tlm_proto.h]
 
-    NdmpdMain --> NdmpdProp
-    NdmpdMain --> NdmpdDoor
-    NdmpdMain --> TlmLib
-    NdmpdMain --> NdmpdComm
-    NdmpdComm --> NdmpdHandler
-    NdmpdComm --> NdmpdData
-    NdmpdComm --> NdmpdMover
-    NdmpdComm --> NdmpdUtil
-    NdmpdComm --> NdmpdDoor
-    NdmpdComm --> NdmpdProp
-    NdmpdHandler --> NdmpdConfig
-    NdmpdHandler --> NdmpdScsi
-    NdmpdHandler --> NdmpdTape
-    NdmpdHandler --> NdmpdData
-    NdmpdData --> NdmpdUtil
-    NdmpdData --> NdmpdMover
-    NdmpdData --> TlmLib
-    NdmpdMover --> NdmpdUtil
+    ndmpdMain --> ndmpdProp
+    ndmpdMain --> ndmpdDoor
+    ndmpdMain --> tlmLib
+    ndmpdMain --> ndmpdComm
+    ndmpdComm --> ndmpdHandler
+    ndmpdComm --> ndmpdData
+    ndmpdComm --> ndmpdMover
+    ndmpdComm --> ndmpdUtil
+    ndmpdComm --> ndmpdDoor
+    ndmpdComm --> ndmpdProp
+    ndmpdHandler --> ndmpdConfig
+    ndmpdHandler --> ndmpdScsi
+    ndmpdHandler --> ndmpdTape
+    ndmpdHandler --> ndmpdData
+    ndmpdData --> ndmpdUtil
+    ndmpdData --> ndmpdMover
+    ndmpdData --> tlmLib
+    ndmpdMover --> ndmpdUtil
 ```
 
 - `ndmpd_main.c` 负责加载插件、初始化 door 服务、ZFS 与 TLM 子系统，并启动 `ndmpd_main` 工作线程，过程中直接依赖属性管理与 door 控制接口。【F:trunk/usr/src/cmd/ndmpd/ndmp/ndmpd_main.c†L75-L117】【F:trunk/usr/src/cmd/ndmpd/ndmp/ndmpd_main.c†L205-L305】【F:trunk/usr/src/cmd/ndmpd/tlm/tlm_init.c†L492-L540】【F:trunk/usr/src/cmd/ndmpd/ndmp/ndmpd_door.c†L64-L147】
